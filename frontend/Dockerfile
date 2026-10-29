@@ -1,8 +1,11 @@
 # ---- deps ----
 FROM node:22-alpine AS deps
 WORKDIR /app
+# 可选：npm 镜像源（国内可用 https://registry.npmmirror.com）
+ARG NPM_REGISTRY=
+RUN if [ -n "$NPM_REGISTRY" ]; then npm config set registry "$NPM_REGISTRY"; fi
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --no-audit --no-fund
 
 # ---- build ----
 FROM node:22-alpine AS build

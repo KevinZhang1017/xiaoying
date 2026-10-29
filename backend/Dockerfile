@@ -1,6 +1,9 @@
 # ---- build ----
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /src
+# 可选：Maven 镜像源（国内可用 https://maven.aliyun.com/repository/public）
+ARG MAVEN_MIRROR=
+RUN if [ -n "$MAVEN_MIRROR" ]; then mkdir -p /root/.m2 && printf '<settings><mirrors><mirror><id>custom</id><mirrorOf>*</mirrorOf><url>%s</url></mirror></mirrors></settings>' "$MAVEN_MIRROR" > /root/.m2/settings.xml; fi
 COPY pom.xml .
 RUN mvn -B -ntp dependency:go-offline
 COPY src ./src

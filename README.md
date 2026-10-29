@@ -65,6 +65,7 @@ cp .env.example .env          # 可选，不复制也会使用相同的默认值
 docker compose up --build
 ```
 
+- **国内网络**：如果构建卡在 `mvn dependency:go-offline` 或 `npm ci`，在 `.env` 中设置 `MAVEN_MIRROR=https://maven.aliyun.com/repository/public` 和 `NPM_REGISTRY=https://registry.npmmirror.com` 后重新构建（`.env.example` 中已有注释好的示例）。
 - 网站：http://localhost:3000，用 `alice@demo.local` / `demo1234` 登录（也可以用 `bob@demo.local`，或自己注册）
 - 后端：http://localhost:8080（也可以直接调接口，见第 6 节）
 - MySQL 首次启动后，Flyway 会自动建表并写入模板数据；后端启动时会创建两个演示账号。

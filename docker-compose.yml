@@ -20,7 +20,10 @@ services:
       start_period: 20s
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        MAVEN_MIRROR: ${MAVEN_MIRROR:-}
     restart: unless-stopped
     depends_on:
       mysql:
@@ -53,6 +56,7 @@ services:
       context: ./frontend
       args:
         API_INTERNAL_URL: http://backend:8080
+        NPM_REGISTRY: ${NPM_REGISTRY:-}
     restart: unless-stopped
     depends_on:
       backend:
