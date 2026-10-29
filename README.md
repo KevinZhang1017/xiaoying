@@ -10,9 +10,9 @@
 
 | 层 | 选型 | 版本 |
 |---|---|---|
-| 前端 | Next.js（App Router）· React · TypeScript | Next 15.5.x · React 19.1+ · TS 5.7+ |
-| 前端状态 | TanStack Query | 5.x |
-| 前端测试 | Vitest · Testing Library · jsdom | Vitest 3.x |
+| 前端 | Next.js（App Router）· React · TypeScript | Next 15.5.28 · React 19.3.1 · TS 5.9.3（lockfile 锁定） |
+| 前端状态 | TanStack Query | 5.105.0 |
+| 前端测试 | Vitest · Testing Library · jsdom | Vitest 3.2.7 |
 | 后端 | Java · Spring Boot · MyBatis | Java 21 · Spring Boot 3.3.5 · mybatis-spring-boot-starter 3.0.3 |
 | 数据库 | MySQL（运行时）/ H2 MySQL 模式（仅测试） | MySQL 8.0 |
 | 迁移 | Flyway（随 Spring Boot 3.3 管理） | 10.x |
@@ -96,7 +96,7 @@ cd backend  && mvn verify                  # 编译 + 单元测试 + 集成测�
 cd frontend && npm run lint && npm run typecheck && npm test && npm run build
 ```
 
-CI（`.github/workflows/ci.yml`）在每次 push 和 pull request 时运行同样的检查，并额外跑一次 `docker compose build`。
+CI（`.github/workflows/ci.yml`）在每次 push 和 pull request 时运行同样的检查，然后用 `docker compose up` 启动整套服务（MySQL + Java + Next.js），执行端到端冒烟测试 `.github/scripts/e2e.sh`。测试经由 Next.js 代理完成：登录 → 上传 → 提交 → 观察到 RUNNING → 成功并按顺序完成三步 → 注入 GENERATE 失败（FINALIZE 不执行）→ 上传校验 → 用户隔离 → 重启后端后历史仍在。失败时，CI 会把关键输出写成注解，便于查看。
 
 ## 4. 配置项
 
@@ -260,7 +260,14 @@ CI（`.github/workflows/ci.yml`）在每次 push 和 pull request 时运行同�
 - 素材没有清理策略，删除账号等功能不在范围内。
 - 单实例设计：线程池在进程内，多实例部署需要换成数据库抢占（`UPDATE … WHERE status='PENDING'` 已经天然支持）或消息队列。
 
-**验证情况**：⚠️ 本仓库的代码是在一个无法访问 npm / Maven 中央仓库的环境中编写的，**交付前还没有在该环境中完成编译、测试和 `docker compose up`**，`frontend/package-lock.json` 也需要在有网络的环境执行 `npm install` 生成后再提交（CI 中的 `npm ci` 依赖它）。请以 CI 的运行结果为准。
+**验证情况**：GitHub Actions 全部通过，包括：
+- 前端 lint、类型检查、Vitest、生产构建；
+- 后端 16 个测试和打包；
+- docker compose 构建与端到端冒烟测试。
+
+本地开发模式（`npm run dev` + `mvn spring-boot:run`）的浏览器交互没有自动化测试，需要手动演示（见第 8 节）。
+
+**小说明**：因为模板详情页有 `loading.tsx` 流式加载骨架，访问不存在的模板时页面会渲染「模板不存在或已下线」，但 HTTP 状态码是 200 而不是 404，这是 Next.js 流式渲染的行为。接口层 `GET /api/templates/{id}` 正常返回 404。
 
 **实际投入**：约 X 小时（请按实际情况填写）。
 
