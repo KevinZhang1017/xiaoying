@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:mockstudio;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+
+app:
+  storage:
+    root: ${java.io.tmpdir}/mockstudio-test-${random.uuid}
+  demo-users:
+    enabled: true
+    password: demo1234
+  dev-api:
+    enabled: true
+  simulation:
+    delays-ms:
+      ASSET_CHECK: 0
+      GENERATE: 0
+      FINALIZE: 0
+    fail-stage:

@@ -1,0 +1,20 @@
+# deps / build
+node_modules/
+.next/
+out/
+target/
+*.tsbuildinfo
+
+# env
+.env
+.env.local
+
+# runtime data
+backend/data/
+data/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store

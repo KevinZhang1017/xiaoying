@@ -1,0 +1,67 @@
+name: mockstudio
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-mockstudio}
+      MYSQL_USER: ${MYSQL_USER:-mockstudio}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-mockstudio}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER -p$$MYSQL_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-mockstudio}?useUnicode=true&characterEncoding=utf8&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
+      DB_USERNAME: ${MYSQL_USER:-mockstudio}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-mockstudio}
+      STORAGE_ROOT: /data/files
+      DEV_API_ENABLED: ${DEV_API_ENABLED:-true}
+      DEMO_USERS_ENABLED: ${DEMO_USERS_ENABLED:-true}
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-demo1234}
+      SIM_DELAY_ASSET_CHECK_MS: ${SIM_DELAY_ASSET_CHECK_MS:-1500}
+      SIM_DELAY_GENERATE_MS: ${SIM_DELAY_GENERATE_MS:-4000}
+      SIM_DELAY_FINALIZE_MS: ${SIM_DELAY_FINALIZE_MS:-1500}
+      SIM_FAIL_STAGE: ${SIM_FAIL_STAGE:-}
+    volumes:
+      - files-data:/data/files
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf \"GET /actuator/health HTTP/1.0\\r\\n\\r\\n\" >&3 && grep -q UP <&3'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        API_INTERNAL_URL: http://backend:8080
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      API_INTERNAL_URL: http://backend:8080
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+
+volumes:
+  mysql-data:
+  files-data:
