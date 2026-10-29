@@ -22,6 +22,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
@@ -248,7 +249,7 @@ class TaskFlowIntegrationTest {
                 .andExpect(jsonPath("$.code").value("ASSET_NOT_FOUND"));
 
         JsonNode bobHistory = json.readTree(mvc.perform(get("/api/tasks").cookie(bob))
-                .andReturn().getResponse().getContentAsString());
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8));
         for (JsonNode item : bobHistory.get("items")) {
             assertThat(item.get("id").asLong()).isNotEqualTo(aliceTask);
         }
@@ -289,7 +290,7 @@ class TaskFlowIntegrationTest {
 
     private long meId(Cookie cookie) throws Exception {
         return json.readTree(mvc.perform(get("/api/auth/me").cookie(cookie)).andReturn()
-                .getResponse().getContentAsString()).get("id").asLong();
+                .getResponse().getContentAsString(StandardCharsets.UTF_8)).get("id").asLong();
     }
 
     private long upload(Cookie cookie, String templateId, byte[] bytes) throws Exception {
@@ -297,7 +298,7 @@ class TaskFlowIntegrationTest {
                         .file(new MockMultipartFile("file", "img", "application/octet-stream", bytes))
                         .param("templateId", templateId).cookie(cookie))
                 .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         return json.readTree(body).get("id").asLong();
     }
 
@@ -305,7 +306,7 @@ class TaskFlowIntegrationTest {
         String body = mvc.perform(post("/api/tasks").cookie(cookie).contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(Map.of("templateId", templateId, "assetIds", assetIds))))
                 .andExpect(status().isAccepted())
-                .andReturn().getResponse().getContentAsString();
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         return json.readTree(body);
     }
 
@@ -313,7 +314,7 @@ class TaskFlowIntegrationTest {
         long deadline = System.currentTimeMillis() + 15_000;
         while (System.currentTimeMillis() < deadline) {
             JsonNode t = json.readTree(mvc.perform(get("/api/tasks/" + taskId).cookie(cookie))
-                    .andReturn().getResponse().getContentAsString());
+                    .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8));
             String s = t.get("status").asText();
             if (s.equals("SUCCEEDED") || s.equals("FAILED")) {
                 return t;
