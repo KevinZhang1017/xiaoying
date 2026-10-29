@@ -24,8 +24,8 @@ curl -fsS -c "$JAR_B" -H 'Content-Type: application/json' \
   -d '{"email":"bob@demo.local","password":"demo1234"}' "$WEB/api/auth/login" >/dev/null || fail "login bob"
 curl -fsS -b "$JAR_A" "$WEB/" | grep -q "旅行明信片" || fail "template list page (SSR) for logged-in user"
 curl -fsS -b "$JAR_A" "$WEB/templates/demo-postcard" | grep -q "上传图片" || fail "template detail page"
-code=$(curl -s -o /dev/null -w '%{http_code}' -b "$JAR_A" "$WEB/templates/nope")
-[ "$code" = "404" ] || fail "unknown template page should 404, got $code"
+# 有 loading.tsx 时页面以流式渲染返回，HTTP 状态为 200，但会渲染 not-found 界面
+curl -s -b "$JAR_A" "$WEB/templates/nope" | grep -q "模板不存在或已下线" || fail "unknown template page should render not-found UI"
 
 upload() { # jar template file
   curl -fsS -b "$1" -F "file=@$3" "$WEB/api/assets?templateId=$2" | json "d['id']"
